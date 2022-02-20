@@ -1,0 +1,21 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "value": "testBicepModules"
+        },
+        "resourceTags": {
+            "value": {
+                "Environment": "dev",
+                "Project": "testBicepModules"
+            }
+        },  
+        "region": {
+            "value": "westeurope"
+        },
+        "vnetAddressSpace": {
+            "value": "192.168.0.0/22"
+        }
+    }
+}
