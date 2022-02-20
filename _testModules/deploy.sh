@@ -14,7 +14,7 @@ DEPLOYMENT_NAME=deploy
 PARAM_FILE="./${DEPLOYMENT_NAME}.parameters.${ENVIRONMENT}.json"
 APP_NAME=$(cat $PARAM_FILE | jq -r .parameters.appName.value)
 RG_NAME="rg-${APP_NAME}-${ENVIRONMENT}"
-LOCATION=$(cat $PARAM_FILE | jq -r .parameters.region.value)
+LOCATION=$(cat $PARAM_FILE | jq -r .parameters.location.value)
 
 
 # Code - do not change anything here on deployment

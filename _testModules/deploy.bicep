@@ -3,45 +3,43 @@ targetScope = 'resourceGroup'
 
 // PARAMS
 param resourceTags object
-param region string = resourceGroup().location
+param location string = resourceGroup().location
 param appName string
 
 param vnetAddressSpace string = '192.168.0.0/22'
 
-// param snetDefault object = {
-//   name: 'snet-default'
-//   subnetPrefix: '192.168.0.0/24'
-// }
-
-// param snetApim object = {
-//   name: 'snet-Apim'
-//   subnetPrefix: '192.168.1.0/24'
-// }
-
-var subnets = [
+var subnetsInfo = [
   {
     name: 'snet1'
     addressPrefix: '192.168.0.0/24'
-    privateEndpointNetworkPolicies: 'Enabled'
-    nsgId: null
-    udrId: null
-
+    privateEndpointNetworkPolicies: 'Enabled' //any value will be translated to Enabled
+    nsgId: null         // or ID of the resource
+    routeTableId: null  // or ID of the resource
+    natGatewayId: null  // or ID of the resource
+    serviceEndpoints: [
+      {
+        service: 'Microsoft.Storage'
+      }
+      {
+        service: 'Microsoft.Sql'
+      }
+    ]    
   }
   {
     name: 'snet2'
     addressPrefix: '192.168.1.0/24'
-    privateEndpointNetworkPolicies: 'Enabled'
-    nsgId: nsgId
-    udrId: null
-    // serviceEndpoints: apimSubnetServiceEndpoints   
-  }      
+    privateEndpointNetworkPolicies: 'Disabled'
+    nsgId: nsgId        // or ID of the resource
+    routeTableId: null  // or ID of the resource
+    natGatewayId: null  // or ID of the resource
+    serviceEndpoints: []    
+  }
 ]
-
 
 //VARS
 var env = resourceTags.Environment
 var vnetName = 'vnet-${appName}-${env}'
-var nsgId  = nsg.id
+var nsgId = nsg.id
 
 //Create Resources
 
@@ -50,16 +48,16 @@ module vnet '../networking/vnet.module.bicep' = {
   name: 'vnetDeployment-${vnetName}'
   params: {
     name: vnetName
-    region: region
+    location: location
     vnetAddressSpace: vnetAddressSpace
     tags: resourceTags
-    subnets: subnets    
+    subnetsInfo: subnetsInfo
   }
 }
 
 resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
   name: 'nsg1'
-  location: region
+  location: location
   tags: resourceTags
   properties: {
     securityRules: [
@@ -75,17 +73,16 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
           priority: 100
           direction: 'Inbound'
         }
-      } 
+      }
     ]
   }
 }
 
+output appName string = appName
 output vnetName string = vnet.outputs.vnetName
 output vnetId string = vnet.outputs.vnetID
-output subnets array = [ for (item, i) in subnets: {
+output subnets array = [for (item, i) in subnetsInfo: {
   subnetIndex: i
   subnetName: vnet.outputs.subnetsOutput[i].name
   subnetId: vnet.outputs.subnetsOutput[i].id
 }]
-
-output appName string = appName
