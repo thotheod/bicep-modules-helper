@@ -23,29 +23,18 @@ var subnets = [
     name: 'snet1'
     addressPrefix: '192.168.0.0/24'
     privateEndpointNetworkPolicies: 'Enabled'
-    needsNsg: false
-    needsUDR: false
+    nsgId: null
+    udrId: null
 
   }
   {
     name: 'snet2'
     addressPrefix: '192.168.1.0/24'
     privateEndpointNetworkPolicies: 'Enabled'
-    needsNsg: true
-    needsUDR: false
+    nsgId: nsgId
+    udrId: null
     // serviceEndpoints: apimSubnetServiceEndpoints   
   }      
-]
-
-
-var subnetNsgs = [
-  null
-  nsgId
-]
-
-var subnetUdrs = [
-  null
-  null
 ]
 
 
@@ -62,14 +51,9 @@ module vnet '../networking/vnet.module.bicep' = {
   params: {
     name: vnetName
     region: region
-    // nsgId: nsg.id
-    // snetDefault: snetDefault
-    // snetApim: snetApim
     vnetAddressSpace: vnetAddressSpace
     tags: resourceTags
-    subnets: subnets
-    subnetNsgs: subnetNsgs
-    subnetUdrs: subnetUdrs
+    subnets: subnets    
   }
 }
 
@@ -97,7 +81,11 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
 }
 
 output vnetName string = vnet.outputs.vnetName
+output vnetId string = vnet.outputs.vnetID
+output subnets array = [ for (item, i) in subnets: {
+  subnetIndex: i
+  subnetName: vnet.outputs.subnetsOutput[i].name
+  subnetId: vnet.outputs.subnetsOutput[i].id
+}]
+
 output appName string = appName
-// output aksSubnetID string = vnet.outputs.snetAksID
-// output akvID string = keyVault.outputs.id
-// output akvURL string = 'https://${toLower(keyVault.outputs.name)}.vault.azure.net/'//https://kv-dev-databricksexplore.vault.azure.net/
