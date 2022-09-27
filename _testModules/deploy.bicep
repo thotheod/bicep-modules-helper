@@ -5,46 +5,55 @@ targetScope = 'resourceGroup'
 param resourceTags object
 param location string = resourceGroup().location
 param appName string
+param vnetAddressSpace string
 
-param vnetAddressSpace string = '192.168.0.0/22'
-
-var subnetsInfo = [
-  {
-    name: 'snet1'
-    addressPrefix: '192.168.0.0/24'
-    privateEndpointNetworkPolicies: 'Enabled' //any value will be translated to Enabled
-    nsgId: null         // or ID of the resource
-    routeTableId: null  // or ID of the resource
-    natGatewayId: null  // or ID of the resource
-    serviceEndpoints: [
-      {
-        service: 'Microsoft.Storage'
-      }
-      {
-        service: 'Microsoft.Sql'
-      }
-    ]    
-  }
-  {
-    name: 'snet2'
-    addressPrefix: '192.168.1.0/24'
-    privateEndpointNetworkPolicies: 'Disabled'
-    nsgId: nsgId        // or ID of the resource
-    routeTableId: null  // or ID of the resource
-    natGatewayId: null  // or ID of the resource
-    serviceEndpoints: []    
-  }
-]
+param appServicePlanSku object = {
+    name: 'S1'
+    tier: 'Standard'
+    size: 'S1'
+    family: 'S'
+    capacity: 1
+}
+param aspServerOS string = 'Linux'
 
 //VARS
 var env = resourceTags.Environment
 var vnetName = 'vnet-${appName}-${env}'
-var nsgId = nsg.id
+var subnetsInfo = [
+  {
+    name: 'default'
+    properties: {
+      addressPrefix: '192.168.0.0/24'
+      privateEndpointNetworkPolicies: 'Disabled' //any value will be translated to Enabled
+      privateLinkServiceNetworkPolicies: 'Enabled'
+    }
+  }
+  {
+    name: 'snetWebApp'
+    properties: {
+      addressPrefix: '192.168.1.0/24'
+      delegations: [
+        {
+          name: 'delegation'
+          properties: {
+            serviceName: 'Microsoft.Web/serverfarms'
+          }
+        }
+      ] 
+    }
+  }
+]
+
+var lawsName = 'laws-${appName}'
+
+var appHostName = 'asp-${appName}-${env}'
+
+//var appInsFuncsName = 'ai-Funcs-${appName}'
 
 //Create Resources
 
 //create the Virtual Network to host all resources and its subnets
-module vnet '../networking/vnet.module.bicep' = {
+module vnet '../modules/networking/vnet.bicep' = {
   name: 'vnetDeployment-${vnetName}'
   params: {
     name: vnetName
@@ -55,32 +64,29 @@ module vnet '../networking/vnet.module.bicep' = {
   }
 }
 
-resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
-  name: 'nsg1'
-  location: location
-  tags: resourceTags
-  properties: {
-    securityRules: [
-      {
-        name: 'Client_communication_to_API_Management'
-        properties: {
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '80'
-          sourceAddressPrefix: 'Internet'
-          destinationAddressPrefix: 'VirtualNetwork'
-          access: 'Allow'
-          priority: 100
-          direction: 'Inbound'
-        }
-      }
-    ]
+module laws '../modules/logs/logAnalyticsWS.bicep' = {
+  name: 'logAnalyticsWS-deployment'
+  params: {
+    name: lawsName
+    location: location
+    tags: resourceTags
+  }
+}
+
+module appHost '../modules/appService/appServicePlan.bicep' = {
+  name: 'asp-Host-deployment'
+  params: {
+    name: appHostName
+    location: location
+    sku: appServicePlanSku
+    serverOS: aspServerOS
+    isElasticPremium: false
+    diagnosticWorkspaceId: laws.outputs.id
   }
 }
 
 output appName string = appName
-output vnetName string = vnet.outputs.vnetName
-output vnetId string = vnet.outputs.vnetID
+output vnetId string = vnet.outputs.vnetId
 output subnets array = [for (item, i) in subnetsInfo: {
   subnetIndex: i
   subnetName: vnet.outputs.subnetsOutput[i].name

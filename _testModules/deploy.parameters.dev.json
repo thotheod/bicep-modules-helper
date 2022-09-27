@@ -3,16 +3,16 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "appName": {
-            "value": "testWebAppContainer"
+            "value": "webAppContainer"
         },
         "resourceTags": {
             "value": {
                 "Environment": "dev",
-                "Project": "testWebAppContainer"
+                "Project": "webAppContainer"
             }
         },  
         "location": {
-            "value": "swedencentral"
+            "value": "northeurope"
         },
         "vnetAddressSpace": {
             "value": "192.168.0.0/22"

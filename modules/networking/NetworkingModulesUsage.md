@@ -24,16 +24,15 @@ var subnetsInfo = [
     privateEndpointNetworkPolicies: 'Enabled'
     nsgId: null             // or ID of the resource
     routeTableId: null             // or ID of the resource
-    natGatewayId: null      // or ID of the resource
-    serviceEndpoints: [
+    natGatewayId: null      // or ID of the resource    
+    delegations: [
       {
-        service: 'Microsoft.Storage'
+        name: 'delegation'
+        properties: {
+          serviceName: 'Microsoft.Web/serverfarms'
+        }
       }
-      {
-        service: 'Microsoft.Sql'
-      }
-    ]    
-  }
+    ]
   {
     name: 'snet2'
     addressPrefix: '192.168.1.0/24'

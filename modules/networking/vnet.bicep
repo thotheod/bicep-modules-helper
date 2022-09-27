@@ -9,29 +9,10 @@ param location string = resourceGroup().location
 @description('key-value pairs as tags, to identify the resource')
 param tags object
 
-@description('CIDR to be allocated to the new vnet i.e. 192.168.1.0/24')
-param vnetAddressSpace string 
+@description('CIDR to be allocated to the new vnet i.e. 192.168.0.0/24')
+param vnetAddressSpace string
 
-
-param defaultSnet object
-param functionsSnet object
-
-var defaultSnetConfig = {
-  name: 'snet-default'
-  properties: defaultSnet
-}
-
-var functionsSnetConfig = {
-  name: 'snet-functions'
-  properties: functionsSnet
-}
-
-
-var allSubnets = [
-  defaultSnetConfig
-  functionsSnetConfig
-]
-
+param subnetsInfo array
 
 resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
   name: name
@@ -42,11 +23,17 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
         vnetAddressSpace
       ]
     }
-    subnets: allSubnets
+    subnets: subnetsInfo
   }
   tags: tags
 }
 
 output vnetId string = vnet.id
-output defaultSnetId string = vnet.properties.subnets[0].id
-output funcSnetId string = vnet.properties.subnets[1].id
+output vnetName string = vnet.name
+
+// INFO: based on second example of https://docs.microsoft.com/en-us/azure/azure-resource-manager/bicep/loops#array-and-index
+output subnetsOutput array = [ for (item, i) in subnetsInfo: {
+  subnetIndex: i
+  id: vnet.properties.subnets[i].id
+  name: vnet.properties.subnets[i].name  
+}]

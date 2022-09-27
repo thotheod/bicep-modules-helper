@@ -135,7 +135,7 @@ var diagnosticsMetrics = [for metric in diagnosticMetricsToEnable: {
 
 
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: name
   kind: aspKind
   location: location
