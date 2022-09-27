@@ -26,6 +26,14 @@ param tags object = {}
 //     family: 'Pv2'
 //     capacity: 1
 // }
+// Example of SKU for Standard Plan (hosting apps or non auto scaling functions)
+// sku object = {
+//     name: 'S1'
+//     tier: 'Standard'
+//     size: 'S1'
+//     family: 'S'
+//     capacity: 1
+// }
 @description('Optional EP1 is default. Defines the name, tier, size, family and capacity of the App Service Plan.')
 param sku object = {
         name: 'EP1'
@@ -155,17 +163,6 @@ resource appServicePlan_diagnosticSettings 'Microsoft.Insights/diagnosticsetting
   }
   scope: appServicePlan
 }
-
-// module appServicePlan_rbac '.bicep/nested_rbac.bicep' = [for (roleAssignment, index) in roleAssignments: {
-//   name: '${uniqueString(deployment().name, location)}-AppServicePlan-Rbac-${index}'
-//   params: {
-//     description: contains(roleAssignment, 'description') ? roleAssignment.description : ''
-//     principalIds: roleAssignment.principalIds
-//     principalType: contains(roleAssignment, 'principalType') ? roleAssignment.principalType : ''
-//     roleDefinitionIdOrName: roleAssignment.roleDefinitionIdOrName
-//     resourceId: appServicePlan.id
-//   }
-// }]
 
 // =========== //
 // Outputs     //
