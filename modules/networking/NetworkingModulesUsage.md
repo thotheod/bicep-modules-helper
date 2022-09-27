@@ -48,7 +48,7 @@ var subnetsInfo = [
 
 _Call the module_
 ``` bicep
-module vnet '../networking/vnet.module.bicep' = {
+module vnet '../networking/vnet.old.bicep' = {
   name: 'vnetDeployment-${vnetName}'
   params: {
     name: vnetName

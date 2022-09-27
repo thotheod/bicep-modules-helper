@@ -37,8 +37,8 @@ az deployment group create \
 printf "$green" "*** Deployment finished for ENV: $ENVIRONMENT.  ***"
 printf "$green" "***************************************************"
 
-# # get the outputs of the deployment
-# outputs=$(az deployment group show --name $DEPLOYMENT_NAME -g $RG_NAME --query properties.outputs)
+# get the outputs of the deployment
+outputs=$(az deployment group show --name $DEPLOYMENT_NAME -g $RG_NAME --query properties.outputs)
 
 # # store them in variables
 # vnetName=$(jq -r .vnetName.value <<<$outputs)
