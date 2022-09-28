@@ -16,6 +16,7 @@ param tags object = {}
   'functionapp'
   'functionapp,linux'
   'app'
+  'app,linux,container'
 ])
 param kind string
 
@@ -165,7 +166,15 @@ var funcNet31WindowsAppSettings = functionsWorkerRuntime == 'dotnet' &&  functio
       WEBSITE_CONTENTAZUREFILECONNECTIONSTRING:  'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${listKeys(storageAccount.id, storageAccount.apiVersion).keys[0].value}'// '@Microsoft.KeyVault(VaultName=keyVaultName;SecretName=${secretNames.funcStorageConnectionString})' //'DefaultEndpointsProtocol=https;AccountName=${funcStorageExisting.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${funcStorageExisting.listKeys().keys[0].value}'
     } : {}    
 
-var expandedAppSettings = union(appSettingsKeyValuePairs, azureWebJobsValues, appInsightsValues, authSettingV2Configuration, funcNet6WindowsAppSettings, funcNet31WindowsAppSettings)
+var containerAppSettings = contains(kind, 'container') ? {
+  DOCKER_REGISTRY_SERVER_PASSWORD: ''
+  DOCKER_REGISTRY_SERVER_URL: 'https://mcr.microsoft.com'
+  DOCKER_REGISTRY_SERVER_USERNAME: ''
+  WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'false'
+} : {}
+
+
+var expandedAppSettings = union(appSettingsKeyValuePairs, azureWebJobsValues, appInsightsValues, authSettingV2Configuration, funcNet6WindowsAppSettings, funcNet31WindowsAppSettings, containerAppSettings)
 
 var diagnosticsLogs = [for category in diagnosticLogCategoriesToEnable: {
   category: category
@@ -230,7 +239,7 @@ resource app 'Microsoft.Web/sites@2021-03-01' = {
     storageAccountRequired: storageAccountRequired
     virtualNetworkSubnetId: !empty(virtualNetworkSubnetId) ? virtualNetworkSubnetId : any(null)
     siteConfig: siteConfig
-    keyVaultReferenceIdentity:  !empty(userAssignedIdentityId) ? userAssignedIdentityId : ''  // https://docs.microsoft.com/en-us/azure/app-service/app-service-key-vault-references?tabs=azure-cli#access-vaults-with-a-user-assigned-identity
+    keyVaultReferenceIdentity:  !empty(userAssignedIdentityId) ? userAssignedIdentityId : 'SystemAssigned'  // https://docs.microsoft.com/en-us/azure/app-service/app-service-key-vault-references?tabs=azure-cli#access-vaults-with-a-user-assigned-identity
   }
 }
 

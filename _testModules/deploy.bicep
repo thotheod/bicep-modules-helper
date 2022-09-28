@@ -47,6 +47,11 @@ var subnetsInfo = [
 var lawsName = 'laws-${appName}'
 
 var appHostName = 'asp-${appName}-${env}'
+var webAppContainerName = 'app-${appName}-${env}'
+var AppSettingsKeyValuePairs = {
+  ExtraAppSettingsTest: 'nothing'
+}
+
 
 //var appInsFuncsName = 'ai-Funcs-${appName}'
 
@@ -84,6 +89,25 @@ module appHost '../modules/appService/appServicePlan.bicep' = {
     diagnosticWorkspaceId: laws.outputs.id
   }
 }
+
+module webAppContainer '../modules/appService/functionOrApp.bicep' = {
+  name: 'webAppContainer-deployment'
+  params: {
+    kind: 'app,linux,container'
+    name: webAppContainerName
+    location: location
+    tags: resourceTags
+    serverFarmResourceId: appHost.outputs.resourceId
+    systemAssignedIdentity: true
+    diagnosticWorkspaceId: laws.outputs.id
+    appSettingsKeyValuePairs: AppSettingsKeyValuePairs
+    siteConfig: {
+      linuxFxVersion: 'DOCKER|mcr.microsoft.com/appsvc/staticsite:latest' 
+      alwaysOn: true
+    }
+  }
+}
+
 
 output appName string = appName
 output vnetId string = vnet.outputs.vnetId
