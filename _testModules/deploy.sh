@@ -44,3 +44,8 @@ outputs=$(az deployment group show --name $DEPLOYMENT_NAME -g $RG_NAME --query p
 # vnetName=$(jq -r .vnetName.value <<<$outputs)
 
 # printf "$green" "Vnet Name:       $vnetName"
+
+
+az deployment group create \
+    -f ./testName.bicep \
+    -g rg-hub-dev

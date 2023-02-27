@@ -1,8 +1,9 @@
-@description('Required. Name of the Log Analytics workspace.')
+@description('Required. Name of the Bastion Service.')
 param name string
 
-@description('Optional. Location for all resources.')
-param location string = resourceGroup().location
+@description('Azure region where the resources will be deployed in')
+param location string
+
 param tags object = {}
 
 @description('Optional. Service Tier: PerGB2018, Free, Standalone, PerGB or PerNode.')
@@ -36,10 +37,13 @@ param publicNetworkAccessForQuery string = 'Enabled'
 @description('Optional. Set to \'true\' to use resource or workspace permissions and \'false\' (or leave empty) to require workspace permissions.')
 param useResourcePermissions bool = false
 
+var lawsMaxLength = 63
+var lawsNameSantized = replace(name, '_', '-')
+var lawsName = length(lawsNameSantized) > lawsMaxLength ? substring(lawsNameSantized, 0, lawsMaxLength) : lawsNameSantized
 
-resource laws 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
+resource laws 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   location: location
-  name: name
+  name: lawsName
   tags: tags
   properties: {
     retentionInDays: dataRetention
@@ -55,7 +59,7 @@ resource laws 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
 }
 
 @description('The name of the resource.')
-output name string = laws.name
+output logAnalyticsWSName string = laws.name
 
 @description('The resource ID of the resource.')
-output id string = laws.id
+output logAnalyticsWSID string = laws.id

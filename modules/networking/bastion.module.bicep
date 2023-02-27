@@ -1,11 +1,20 @@
+@description('Required. Name of the Bastion Service.')
 param name string
-param subnetId string
-param region string
-param tags object
 
-resource publicIp 'Microsoft.Network/publicIPAddresses@2020-06-01' = {
+@description('Azure region where the resources will be deployed in')
+param location string
+
+param tags object = {}
+
+param subnetId string
+
+var bastionNameMaxLength = 80
+var bastionNameSantized = length(name) > bastionNameMaxLength ? substring(name, 0, bastionNameMaxLength) : name
+
+//auxiliary but mandatory resource that needs to be created
+resource publicIp 'Microsoft.Network/publicIPAddresses@2022-07-01' = {
   name: 'pip-${name}'
-  location: region
+  location: location
   tags: tags
   sku: {
     name: 'Standard'
@@ -15,9 +24,9 @@ resource publicIp 'Microsoft.Network/publicIPAddresses@2020-06-01' = {
   }
 }
 
-resource bastionHost 'Microsoft.Network/bastionHosts@2020-06-01' = {
-  name: name
-  location: region
+resource bastionHost 'Microsoft.Network/bastionHosts@2022-07-01' = {
+  name: bastionNameSantized
+  location: location
   tags: tags
   properties: {
     ipConfigurations: [
@@ -36,4 +45,5 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2020-06-01' = {
   }
 }
 
-output ipAddress string = publicIp.properties.ipAddress
+@description('The standard public IP assigned to the Bastion Service')
+output bastionPublicIp string = publicIp.properties.ipAddress
