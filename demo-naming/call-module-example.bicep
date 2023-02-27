@@ -12,6 +12,7 @@ param resourceNames object
 //   }
 // }
 
+
 module stg '../modules/storage/storage.bicep' = {
   name: 'stg-deplyment'
   params: {
