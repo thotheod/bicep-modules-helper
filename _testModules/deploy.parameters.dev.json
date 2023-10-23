@@ -5,17 +5,32 @@
         "appName": {
             "value": "webAppContainer"
         },
-        "resourceTags": {
-            "value": {
-                "Environment": "dev",
-                "Project": "webAppContainer"
-            }
-        },  
+        "env": {
+            "value": "webAppContainer"
+        },        
         "location": {
             "value": "northeurope"
         },
         "vnetAddressSpace": {
             "value": "192.168.0.0/22"
+        },
+        "snetDefaultAddressSpace": {
+            "value": "192.168.0.0/24"
+        },
+        "snetWebAppAddressSpace": {
+            "value": "192.168.1.0/24"
+        },
+        "subnetNameDefault": {
+            "value": "snet-defult"
+        },
+        "subnetNameAsp": {
+            "value": "snet-webapp"
+        },
+        "deployLogAnalyticsWs": {
+            "value": true
+        },
+        "logAnalyticsWsName": {
+            "value": "myLogAnalyticsWs"
         }
     }
 }

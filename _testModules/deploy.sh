@@ -46,6 +46,6 @@ outputs=$(az deployment group show --name $DEPLOYMENT_NAME -g $RG_NAME --query p
 # printf "$green" "Vnet Name:       $vnetName"
 
 
-az deployment group create \
-    -f ./testName.bicep \
-    -g rg-hub-dev
+# az deployment group create \
+#     -f ./testName.bicep \
+#     -g rg-hub-dev

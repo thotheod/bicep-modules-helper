@@ -1,12 +1,17 @@
-// that's the default, but put it here for completeness
 targetScope = 'resourceGroup'
 
 // PARAMS
-param resourceTags object
 param location string = resourceGroup().location
 param appName string
 param vnetAddressSpace string
-
+param snetDefaultAddressSpace string
+param snetWebAppAddressSpace string
+param env string
+param deployLogAnalyticsWs bool = true
+param logAnalyticsWsName string = 'laws-${appName}-${env}'
+param subnetNameDefault string = 'default'
+param subnetNameAsp string = 'snetWebApp'
+param aspServerOS string = 'Linux'
 param appServicePlanSku object = {
     name: 'S1'
     tier: 'Standard'
@@ -14,24 +19,24 @@ param appServicePlanSku object = {
     family: 'S'
     capacity: 1
 }
-param aspServerOS string = 'Linux'
+
 
 //VARS
-var env = resourceTags.Environment
+var tags = {}
 var vnetName = 'vnet-${appName}-${env}'
 var subnetsInfo = [
   {
-    name: 'default'
+    name: subnetNameDefault
     properties: {
-      addressPrefix: '192.168.0.0/24'
+      addressPrefix: snetDefaultAddressSpace
       privateEndpointNetworkPolicies: 'Disabled' //any value will be translated to Enabled
       privateLinkServiceNetworkPolicies: 'Enabled'
     }
   }
   {
-    name: 'snetWebApp'
+    name: subnetNameAsp
     properties: {
-      addressPrefix: '192.168.1.0/24'
+      addressPrefix: snetWebAppAddressSpace
       delegations: [
         {
           name: 'delegation'
@@ -43,17 +48,11 @@ var subnetsInfo = [
     }
   }
 ]
-
-var lawsName = 'laws-${appName}'
-
 var appHostName = 'asp-${appName}-${env}'
 var webAppContainerName = 'app-${appName}-${env}'
 var AppSettingsKeyValuePairs = {
   ExtraAppSettingsTest: 'nothing'
 }
-
-
-//var appInsFuncsName = 'ai-Funcs-${appName}'
 
 //Create Resources
 
@@ -64,17 +63,17 @@ module vnet '../modules/networking/vnet.bicep' = {
     name: vnetName
     location: location
     vnetAddressSpace: vnetAddressSpace
-    tags: resourceTags
+    tags: tags
     subnetsInfo: subnetsInfo
   }
 }
 
-module laws '../modules/logs/logAnalyticsWS.bicep' = {
+module laws '../modules/logs/logAnalyticsWS.bicep' = if (deployLogAnalyticsWs) {
   name: 'logAnalyticsWS-deployment'
   params: {
-    name: lawsName
+    name: logAnalyticsWsName
     location: location
-    tags: resourceTags
+    tags: tags
   }
 }
 
@@ -86,7 +85,7 @@ module appHost '../modules/appService/appServicePlan.bicep' = {
     sku: appServicePlanSku
     serverOS: aspServerOS
     isElasticPremium: false
-    diagnosticWorkspaceId: laws.outputs.id
+    diagnosticWorkspaceId: deployLogAnalyticsWs ? laws.outputs.logAnalyticsWSID : ''
   }
 }
 
@@ -96,10 +95,10 @@ module webAppContainer '../modules/appService/functionOrApp.bicep' = {
     kind: 'app,linux,container'
     name: webAppContainerName
     location: location
-    tags: resourceTags
+    tags: tags
     serverFarmResourceId: appHost.outputs.resourceId
     systemAssignedIdentity: true
-    diagnosticWorkspaceId: laws.outputs.id
+    diagnosticWorkspaceId: deployLogAnalyticsWs ? laws.outputs.logAnalyticsWSID : ''
     appSettingsKeyValuePairs: AppSettingsKeyValuePairs
     siteConfig: {
       linuxFxVersion: 'DOCKER|mcr.microsoft.com/appsvc/staticsite:latest' 
