@@ -3,7 +3,7 @@
     "view": {
         "kind": "Form",
         "properties": {
-            "title": "Test Form View",
+            "title": "Deploy Web App for Containers",
             "steps": [
                 {
                     "name": "basics",
@@ -49,55 +49,7 @@
                             },
                             "infoMessages": [],
                             "visible": true
-                        },
-                        {
-                            "name": "vnetAddressSpace",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Vnet Address Space",
-                            "subLabel": "",
-                            "defaultValue": "",
-                            "toolTip": "",
-                            "constraints": {
-                                "required": true,
-                                "regex": "",
-                                "validationMessage": "",
-                                "validations": []
-                            },
-                            "infoMessages": [],
-                            "visible": true
-                        },
-                        {
-                            "name": "snetDefaultAddressSpace",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Snet Default Address Space",
-                            "subLabel": "",
-                            "defaultValue": "",
-                            "toolTip": "",
-                            "constraints": {
-                                "required": true,
-                                "regex": "",
-                                "validationMessage": "",
-                                "validations": []
-                            },
-                            "infoMessages": [],
-                            "visible": true
-                        },
-                        {
-                            "name": "snetWebAppAddressSpace",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Snet Web App Address Space",
-                            "subLabel": "",
-                            "defaultValue": "",
-                            "toolTip": "",
-                            "constraints": {
-                                "required": true,
-                                "regex": "",
-                                "validationMessage": "",
-                                "validations": []
-                            },
-                            "infoMessages": [],
-                            "visible": true
-                        },
+                        },                        
                         {
                             "name": "env",
                             "type": "Microsoft.Common.TextBox",
@@ -153,39 +105,7 @@
                             },
                             "infoMessages": [],
                             "visible": true
-                        },
-                        {
-                            "name": "subnetNameDefault",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Subnet Name Default",
-                            "subLabel": "",
-                            "defaultValue": "default",
-                            "toolTip": "",
-                            "constraints": {
-                                "required": false,
-                                "regex": "",
-                                "validationMessage": "",
-                                "validations": []
-                            },
-                            "infoMessages": [],
-                            "visible": true
-                        },
-                        {
-                            "name": "subnetNameAsp",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Subnet Name Asp",
-                            "subLabel": "",
-                            "defaultValue": "snetWebApp",
-                            "toolTip": "",
-                            "constraints": {
-                                "required": false,
-                                "regex": "",
-                                "validationMessage": "",
-                                "validations": []
-                            },
-                            "infoMessages": [],
-                            "visible": true
-                        },
+                        },                        
                         {
                             "name": "aspServerOS",
                             "type": "Microsoft.Common.TextBox",
@@ -219,6 +139,92 @@
                             "visible": true
                         }
                     ]
+                },
+                {
+                    "name": "networking",
+                    "label": "Networking Settings",
+                    "elements": [
+                        {
+                            "name": "vnetAddressSpace",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Vnet Address Space",
+                            "subLabel": "",
+                            "defaultValue": "",
+                            "toolTip": "",
+                            "constraints": {
+                                "required": true,
+                                "regex": "",
+                                "validationMessage": "",
+                                "validations": []
+                            },
+                            "infoMessages": [],
+                            "visible": true
+                        },
+                        {
+                            "name": "snetDefaultAddressSpace",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Snet Default Address Space",
+                            "subLabel": "",
+                            "defaultValue": "",
+                            "toolTip": "",
+                            "constraints": {
+                                "required": true,
+                                "regex": "",
+                                "validationMessage": "",
+                                "validations": []
+                            },
+                            "infoMessages": [],
+                            "visible": true
+                        },
+                        {
+                            "name": "snetWebAppAddressSpace",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Snet Web App Address Space",
+                            "subLabel": "",
+                            "defaultValue": "",
+                            "toolTip": "",
+                            "constraints": {
+                                "required": true,
+                                "regex": "",
+                                "validationMessage": "",
+                                "validations": []
+                            },
+                            "infoMessages": [],
+                            "visible": true
+                        },
+                        {
+                            "name": "subnetNameDefault",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Subnet Name Default",
+                            "subLabel": "",
+                            "defaultValue": "default",
+                            "toolTip": "",
+                            "constraints": {
+                                "required": false,
+                                "regex": "",
+                                "validationMessage": "",
+                                "validations": []
+                            },
+                            "infoMessages": [],
+                            "visible": true
+                        },
+                        {
+                            "name": "subnetNameAsp",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Subnet Name Asp",
+                            "subLabel": "",
+                            "defaultValue": "snetWebApp",
+                            "toolTip": "",
+                            "constraints": {
+                                "required": false,
+                                "regex": "",
+                                "validationMessage": "",
+                                "validations": []
+                            },
+                            "infoMessages": [],
+                            "visible": true
+                        }
+                    ]
                 }
             ]
         },
@@ -229,14 +235,14 @@
             "parameters": {
                 "location": "[steps('basics').location]",
                 "appName": "[steps('basics').appName]",
-                "vnetAddressSpace": "[steps('basics').vnetAddressSpace]",
-                "snetDefaultAddressSpace": "[steps('basics').snetDefaultAddressSpace]",
-                "snetWebAppAddressSpace": "[steps('basics').snetWebAppAddressSpace]",
+                "vnetAddressSpace": "[steps('networking').vnetAddressSpace]",
+                "snetDefaultAddressSpace": "[steps('networking').snetDefaultAddressSpace]",
+                "snetWebAppAddressSpace": "[steps('networking').snetWebAppAddressSpace]",
                 "env": "[steps('basics').env]",
                 "deployLogAnalyticsWs": "[steps('basics').deployLogAnalyticsWs]",
                 "logAnalyticsWsName": "[steps('basics').logAnalyticsWsName]",
-                "subnetNameDefault": "[steps('basics').subnetNameDefault]",
-                "subnetNameAsp": "[steps('basics').subnetNameAsp]",
+                "subnetNameDefault": "[steps('networking').subnetNameDefault]",
+                "subnetNameAsp": "[steps('networking').subnetNameAsp]",
                 "aspServerOS": "[steps('basics').aspServerOS]",
                 "appServicePlanSku": "[steps('basics').appServicePlanSku]"
             }
