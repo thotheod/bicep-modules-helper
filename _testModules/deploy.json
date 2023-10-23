@@ -1,0 +1,1014 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.22.6.54827",
+      "templateHash": "15321617846146562559"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "appName": {
+      "type": "string"
+    },
+    "vnetAddressSpace": {
+      "type": "string"
+    },
+    "snetDefaultAddressSpace": {
+      "type": "string"
+    },
+    "snetWebAppAddressSpace": {
+      "type": "string"
+    },
+    "env": {
+      "type": "string"
+    },
+    "deployLogAnalyticsWs": {
+      "type": "bool",
+      "defaultValue": true
+    },
+    "logAnalyticsWsName": {
+      "type": "string",
+      "defaultValue": "[format('laws-{0}-{1}', parameters('appName'), parameters('env'))]"
+    },
+    "subnetNameDefault": {
+      "type": "string",
+      "defaultValue": "default"
+    },
+    "subnetNameAsp": {
+      "type": "string",
+      "defaultValue": "snetWebApp"
+    },
+    "aspServerOS": {
+      "type": "string",
+      "defaultValue": "Linux"
+    },
+    "appServicePlanSku": {
+      "type": "object",
+      "defaultValue": {
+        "name": "S1",
+        "tier": "Standard",
+        "size": "S1",
+        "family": "S",
+        "capacity": 1
+      }
+    }
+  },
+  "variables": {
+    "tags": {},
+    "vnetName": "[format('vnet-{0}-{1}', parameters('appName'), parameters('env'))]",
+    "subnetsInfo": [
+      {
+        "name": "[parameters('subnetNameDefault')]",
+        "properties": {
+          "addressPrefix": "[parameters('snetDefaultAddressSpace')]",
+          "privateEndpointNetworkPolicies": "Disabled",
+          "privateLinkServiceNetworkPolicies": "Enabled"
+        }
+      },
+      {
+        "name": "[parameters('subnetNameAsp')]",
+        "properties": {
+          "addressPrefix": "[parameters('snetWebAppAddressSpace')]",
+          "delegations": [
+            {
+              "name": "delegation",
+              "properties": {
+                "serviceName": "Microsoft.Web/serverfarms"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "appHostName": "[format('asp-{0}-{1}', parameters('appName'), parameters('env'))]",
+    "webAppContainerName": "[format('app-{0}-{1}', parameters('appName'), parameters('env'))]",
+    "AppSettingsKeyValuePairs": {
+      "ExtraAppSettingsTest": "nothing"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('vnetDeployment-{0}', variables('vnetName'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('vnetName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "vnetAddressSpace": {
+            "value": "[parameters('vnetAddressSpace')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "subnetsInfo": {
+            "value": "[variables('subnetsInfo')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.22.6.54827",
+              "templateHash": "14060882023814893375"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 64,
+              "metadata": {
+                "description": "Name of the resource Virtual Network (The name must begin with a letter or number, end with a letter, number or underscore, and may contain only letters, numbers, underscores, periods, or hyphens)"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Azure Region where the resource will be deployed in"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "key-value pairs as tags, to identify the resource"
+              }
+            },
+            "vnetAddressSpace": {
+              "type": "string",
+              "metadata": {
+                "description": "CIDR to be allocated to the new vnet i.e. 192.168.0.0/24"
+              }
+            },
+            "subnetsInfo": {
+              "type": "array"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2020-06-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressSpace')]"
+                  ]
+                },
+                "subnets": "[parameters('subnetsInfo')]"
+              },
+              "tags": "[parameters('tags')]"
+            }
+          ],
+          "outputs": {
+            "vnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('name'))]"
+            },
+            "vnetName": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "subnetsOutput": {
+              "type": "array",
+              "copy": {
+                "count": "[length(parameters('subnetsInfo'))]",
+                "input": {
+                  "subnetIndex": "[copyIndex()]",
+                  "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2020-06-01').subnets[copyIndex()].id]",
+                  "name": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2020-06-01').subnets[copyIndex()].name]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[parameters('deployLogAnalyticsWs')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "logAnalyticsWS-deployment",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('logAnalyticsWsName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.22.6.54827",
+              "templateHash": "8020501096287783788"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Required. Name of the Bastion Service."
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region where the resources will be deployed in"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            },
+            "serviceTier": {
+              "type": "string",
+              "defaultValue": "PerGB2018",
+              "allowedValues": [
+                "Free",
+                "Standalone",
+                "PerNode",
+                "PerGB2018"
+              ],
+              "metadata": {
+                "description": "Optional. Service Tier: PerGB2018, Free, Standalone, PerGB or PerNode."
+              }
+            },
+            "dataRetention": {
+              "type": "int",
+              "defaultValue": 90,
+              "minValue": 0,
+              "maxValue": 730,
+              "metadata": {
+                "description": "Optional, default 90. Number of days data will be retained for."
+              }
+            },
+            "publicNetworkAccessForIngestion": {
+              "type": "string",
+              "defaultValue": "Enabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Optional. The network access type for accessing Log Analytics ingestion."
+              }
+            },
+            "publicNetworkAccessForQuery": {
+              "type": "string",
+              "defaultValue": "Enabled",
+              "allowedValues": [
+                "Enabled",
+                "Disabled"
+              ],
+              "metadata": {
+                "description": "Optional. The network access type for accessing Log Analytics query."
+              }
+            },
+            "useResourcePermissions": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Optional. Set to 'true' to use resource or workspace permissions and 'false' (or leave empty) to require workspace permissions."
+              }
+            }
+          },
+          "variables": {
+            "lawsMaxLength": 63,
+            "lawsNameSantized": "[replace(parameters('name'), '_', '-')]",
+            "lawsName": "[if(greater(length(variables('lawsNameSantized')), variables('lawsMaxLength')), substring(variables('lawsNameSantized'), 0, variables('lawsMaxLength')), variables('lawsNameSantized'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2022-10-01",
+              "name": "[variables('lawsName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "retentionInDays": "[parameters('dataRetention')]",
+                "publicNetworkAccessForIngestion": "[parameters('publicNetworkAccessForIngestion')]",
+                "publicNetworkAccessForQuery": "[parameters('publicNetworkAccessForQuery')]",
+                "sku": {
+                  "name": "[parameters('serviceTier')]"
+                },
+                "features": {
+                  "enableLogAccessUsingOnlyResourcePermissions": "[parameters('useResourcePermissions')]"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "logAnalyticsWSName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the resource."
+              },
+              "value": "[variables('lawsName')]"
+            },
+            "logAnalyticsWSID": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the resource."
+              },
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('lawsName'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "asp-Host-deployment",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('appHostName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "sku": {
+            "value": "[parameters('appServicePlanSku')]"
+          },
+          "serverOS": {
+            "value": "[parameters('aspServerOS')]"
+          },
+          "isElasticPremium": {
+            "value": false
+          },
+          "diagnosticWorkspaceId": "[if(parameters('deployLogAnalyticsWs'), createObject('value', reference(resourceId('Microsoft.Resources/deployments', 'logAnalyticsWS-deployment'), '2022-09-01').outputs.logAnalyticsWSID.value), createObject('value', ''))]"
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.22.6.54827",
+              "templateHash": "131648404814914478"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "metadata": {
+                "description": "Required. The name of the app service plan to deploy."
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Optional. Location for all resources."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Optional. Tags of the resource."
+              }
+            },
+            "sku": {
+              "type": "object",
+              "defaultValue": {
+                "name": "EP1",
+                "tier": "ElasticPremium",
+                "size": "EP1",
+                "family": "EP",
+                "capacity": 1
+              },
+              "metadata": {
+                "description": "Optional EP1 is default. Defines the name, tier, size, family and capacity of the App Service Plan."
+              }
+            },
+            "serverOS": {
+              "type": "string",
+              "defaultValue": "Windows",
+              "allowedValues": [
+                "Windows",
+                "Linux"
+              ],
+              "metadata": {
+                "description": "Optional, default is Windows. Kind of server OS."
+              }
+            },
+            "isElasticPremium": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "If sku is Elastic Premium - used for EP Function hosting. Default is true"
+              }
+            },
+            "perSiteScaling": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Optional. If true, apps assigned to this App Service plan can be scaled independently. If false, apps assigned to this App Service plan will scale to all instances of the plan."
+              }
+            },
+            "maximumElasticWorkerCount": {
+              "type": "int",
+              "defaultValue": 20,
+              "metadata": {
+                "description": "Optional, dafualt is 20. Maximum number of total workers allowed for this ElasticScaleEnabled App Service Plan."
+              }
+            },
+            "zoneRedundant": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Optional, default is false. If true, then starts with minimum 3 instances"
+              }
+            },
+            "targetWorkerCount": {
+              "type": "int",
+              "defaultValue": 0,
+              "metadata": {
+                "description": "Optional. Scaling worker count."
+              }
+            },
+            "targetWorkerSize": {
+              "type": "int",
+              "defaultValue": 0,
+              "allowedValues": [
+                0,
+                1,
+                2
+              ],
+              "metadata": {
+                "description": "Optional. The instance size of the hosting plan (small, medium, or large)."
+              }
+            },
+            "diagnosticSettingsName": {
+              "type": "string",
+              "defaultValue": "[format('{0}-diagnosticSettings', parameters('name'))]",
+              "metadata": {
+                "description": "Optional. The name of the diagnostic setting, if deployed."
+              }
+            },
+            "diagnosticStorageAccountId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the diagnostic storage account. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub."
+              }
+            },
+            "diagnosticWorkspaceId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the diagnostic log analytics workspace. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub."
+              }
+            },
+            "diagnosticEventHubAuthorizationRuleId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the diagnostic event hub authorization rule for the Event Hubs namespace in which the event hub should be created or streamed to."
+              }
+            },
+            "diagnosticEventHubName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Name of the diagnostic event hub within the namespace to which logs are streamed. Without this, an event hub is created for each log category. For security reasons, it is recommended to set diagnostic settings to send data to either storage account, log analytics workspace or event hub."
+              }
+            },
+            "diagnosticMetricsToEnable": {
+              "type": "array",
+              "defaultValue": [
+                "AllMetrics"
+              ],
+              "allowedValues": [
+                "AllMetrics"
+              ],
+              "metadata": {
+                "description": "Optional. The name of metrics that will be streamed."
+              }
+            }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "diagnosticsMetrics",
+                "count": "[length(parameters('diagnosticMetricsToEnable'))]",
+                "input": {
+                  "category": "[parameters('diagnosticMetricsToEnable')[copyIndex('diagnosticsMetrics')]]",
+                  "timeGrain": null,
+                  "enabled": true
+                }
+              }
+            ],
+            "aspKind": "[if(parameters('isElasticPremium'), 'elastic', if(equals(parameters('serverOS'), 'Windows'), '', 'linux'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2022-03-01",
+              "name": "[parameters('name')]",
+              "kind": "[variables('aspKind')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": "[parameters('sku')]",
+              "properties": {
+                "perSiteScaling": "[parameters('perSiteScaling')]",
+                "maximumElasticWorkerCount": "[parameters('maximumElasticWorkerCount')]",
+                "reserved": "[equals(parameters('serverOS'), 'Linux')]",
+                "targetWorkerCount": "[parameters('targetWorkerCount')]",
+                "targetWorkerSizeId": "[parameters('targetWorkerSize')]",
+                "zoneRedundant": "[parameters('zoneRedundant')]"
+              }
+            },
+            {
+              "condition": "[or(or(or(not(empty(parameters('diagnosticStorageAccountId'))), not(empty(parameters('diagnosticWorkspaceId')))), not(empty(parameters('diagnosticEventHubAuthorizationRuleId')))), not(empty(parameters('diagnosticEventHubName'))))]",
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.Web/serverfarms/{0}', parameters('name'))]",
+              "name": "[parameters('diagnosticSettingsName')]",
+              "properties": {
+                "storageAccountId": "[if(not(empty(parameters('diagnosticStorageAccountId'))), parameters('diagnosticStorageAccountId'), null())]",
+                "workspaceId": "[if(not(empty(parameters('diagnosticWorkspaceId'))), parameters('diagnosticWorkspaceId'), null())]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('diagnosticEventHubAuthorizationRuleId'))), parameters('diagnosticEventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('diagnosticEventHubName'))), parameters('diagnosticEventHubName'), null())]",
+                "metrics": "[variables('diagnosticsMetrics')]",
+                "logs": []
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('name'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "resourceGroupName": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource group the app service plan was deployed into."
+              },
+              "value": "[resourceGroup().name]"
+            },
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the app service plan."
+              },
+              "value": "[parameters('name')]"
+            },
+            "resourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the app service plan."
+              },
+              "value": "[resourceId('Microsoft.Web/serverfarms', parameters('name'))]"
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location the resource was deployed into."
+              },
+              "value": "[reference(resourceId('Microsoft.Web/serverfarms', parameters('name')), '2022-03-01', 'full').location]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'logAnalyticsWS-deployment')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "webAppContainer-deployment",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "kind": {
+            "value": "app,linux,container"
+          },
+          "name": {
+            "value": "[variables('webAppContainerName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "serverFarmResourceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'asp-Host-deployment'), '2022-09-01').outputs.resourceId.value]"
+          },
+          "systemAssignedIdentity": {
+            "value": true
+          },
+          "diagnosticWorkspaceId": "[if(parameters('deployLogAnalyticsWs'), createObject('value', reference(resourceId('Microsoft.Resources/deployments', 'logAnalyticsWS-deployment'), '2022-09-01').outputs.logAnalyticsWSID.value), createObject('value', ''))]",
+          "appSettingsKeyValuePairs": {
+            "value": "[variables('AppSettingsKeyValuePairs')]"
+          },
+          "siteConfig": {
+            "value": {
+              "linuxFxVersion": "DOCKER|mcr.microsoft.com/appsvc/staticsite:latest",
+              "alwaysOn": true
+            }
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.22.6.54827",
+              "templateHash": "3445655285270436938"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Required. Name of the site."
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Optional. Location for all Resources."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Optional. Tags of the resource."
+              }
+            },
+            "kind": {
+              "type": "string",
+              "allowedValues": [
+                "functionapp",
+                "functionapp,linux",
+                "app",
+                "app,linux,container"
+              ],
+              "metadata": {
+                "description": "Required. Type of site to deploy."
+              }
+            },
+            "functionsWorkerRuntime": {
+              "type": "string",
+              "defaultValue": "",
+              "allowedValues": [
+                "dotnet",
+                "dotnet-isolated",
+                "java",
+                "node",
+                "powershell",
+                "python",
+                ""
+              ],
+              "metadata": {
+                "description": "Default is null, if kind is functionapp then required"
+              }
+            },
+            "functionsWorkerRuntimeVersion": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Default is null, if functionsWorkerRuntime==dotnet, then version is 6 or 3.1"
+              }
+            },
+            "serverFarmResourceId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional if hosting is serverless. The resource ID of the app service plan to use for the site."
+              }
+            },
+            "httpsOnly": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Optional. Configures a site to accept only HTTPS requests. Issues redirect for HTTP requests."
+              }
+            },
+            "clientAffinityEnabled": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Optional. If client affinity is enabled."
+              }
+            },
+            "systemAssignedIdentity": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Optional. Enables system assigned managed identity on the resource."
+              }
+            },
+            "userAssignedIdentityId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. The ID(s) to assign to the resource."
+              }
+            },
+            "storageAccountRequired": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Optional. Checks if Customer provided storage account is required."
+              }
+            },
+            "virtualNetworkSubnetId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Azure Resource Manager ID of the Virtual network and subnet to be joined by Regional VNET Integration. This must be of the form /subscriptions/{subscriptionName}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}."
+              }
+            },
+            "siteConfig": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Optional. The site config object."
+              }
+            },
+            "storageAccountId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Required if app of kind functionapp. Resource ID of the storage account to manage triggers and logging function executions."
+              }
+            },
+            "appInsightId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the app insight to leverage for this resource."
+              }
+            },
+            "setAzureWebJobsDashboard": {
+              "type": "bool",
+              "defaultValue": "[if(contains(parameters('kind'), 'functionapp'), true(), false())]",
+              "metadata": {
+                "description": "Optional. For function apps. If true the app settings \"AzureWebJobsDashboard\" will be set. If false not. In case you use Application Insights it can make sense to not set it for performance reasons."
+              }
+            },
+            "appSettingsKeyValuePairs": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Optional. The app settings-value pairs except for AzureWebJobsStorage, AzureWebJobsDashboard, APPINSIGHTS_INSTRUMENTATIONKEY and APPLICATIONINSIGHTS_CONNECTION_STRING."
+              }
+            },
+            "authSettingV2Configuration": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Optional. The auth settings V2 configuration."
+              }
+            },
+            "diagnosticStorageAccountId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the diagnostic storage account."
+              }
+            },
+            "diagnosticWorkspaceId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of log analytics workspace."
+              }
+            },
+            "diagnosticEventHubAuthorizationRuleId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Resource ID of the diagnostic event hub authorization rule for the Event Hubs namespace in which the event hub should be created or streamed to."
+              }
+            },
+            "diagnosticEventHubName": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional. Name of the diagnostic event hub within the namespace to which logs are streamed. Without this, an event hub is created for each log category."
+              }
+            },
+            "diagnosticLogCategoriesToEnable": {
+              "type": "array",
+              "defaultValue": "[if(equals(parameters('kind'), 'functionapp'), createArray('FunctionAppLogs'), createArray('AppServiceHTTPLogs', 'AppServiceConsoleLogs', 'AppServiceAppLogs', 'AppServiceAuditLogs', 'AppServiceIPSecAuditLogs', 'AppServicePlatformLogs'))]",
+              "allowedValues": [
+                "AppServiceHTTPLogs",
+                "AppServiceConsoleLogs",
+                "AppServiceAppLogs",
+                "AppServiceAuditLogs",
+                "AppServiceIPSecAuditLogs",
+                "AppServicePlatformLogs",
+                "FunctionAppLogs"
+              ],
+              "metadata": {
+                "description": "Optional. The name of logs that will be streamed."
+              }
+            },
+            "diagnosticMetricsToEnable": {
+              "type": "array",
+              "defaultValue": [
+                "AllMetrics"
+              ],
+              "allowedValues": [
+                "AllMetrics"
+              ],
+              "metadata": {
+                "description": "Optional. The name of metrics that will be streamed."
+              }
+            },
+            "diagnosticSettingsName": {
+              "type": "string",
+              "defaultValue": "[format('{0}-diagnosticSettings', parameters('name'))]",
+              "metadata": {
+                "description": "Optional. The name of the diagnostic setting, if deployed."
+              }
+            }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "diagnosticsLogs",
+                "count": "[length(parameters('diagnosticLogCategoriesToEnable'))]",
+                "input": {
+                  "category": "[parameters('diagnosticLogCategoriesToEnable')[copyIndex('diagnosticsLogs')]]",
+                  "enabled": true
+                }
+              },
+              {
+                "name": "diagnosticsMetrics",
+                "count": "[length(parameters('diagnosticMetricsToEnable'))]",
+                "input": {
+                  "category": "[parameters('diagnosticMetricsToEnable')[copyIndex('diagnosticsMetrics')]]",
+                  "timeGrain": null,
+                  "enabled": true
+                }
+              }
+            ],
+            "containerAppSettings": "[if(contains(parameters('kind'), 'container'), createObject('DOCKER_REGISTRY_SERVER_PASSWORD', '', 'DOCKER_REGISTRY_SERVER_URL', 'https://mcr.microsoft.com', 'DOCKER_REGISTRY_SERVER_USERNAME', '', 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', 'false'), createObject())]",
+            "userAssignedIdentities": "[if(not(empty(parameters('userAssignedIdentityId'))), createObject(format('{0}', parameters('userAssignedIdentityId')), createObject()), createObject())]",
+            "identityType": "[if(parameters('systemAssignedIdentity'), if(not(empty(variables('userAssignedIdentities'))), 'SystemAssigned,UserAssigned', 'SystemAssigned'), if(not(empty(variables('userAssignedIdentities'))), 'UserAssigned', 'None'))]",
+            "identity": "[if(not(equals(variables('identityType'), 'None')), createObject('type', variables('identityType'), 'userAssignedIdentities', if(not(empty(variables('userAssignedIdentities'))), variables('userAssignedIdentities'), null())), null())]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2021-03-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "kind": "[parameters('kind')]",
+              "tags": "[parameters('tags')]",
+              "identity": "[variables('identity')]",
+              "properties": {
+                "serverFarmId": "[parameters('serverFarmResourceId')]",
+                "clientAffinityEnabled": "[parameters('clientAffinityEnabled')]",
+                "httpsOnly": "[parameters('httpsOnly')]",
+                "storageAccountRequired": "[parameters('storageAccountRequired')]",
+                "virtualNetworkSubnetId": "[if(not(empty(parameters('virtualNetworkSubnetId'))), parameters('virtualNetworkSubnetId'), null())]",
+                "siteConfig": "[parameters('siteConfig')]",
+                "keyVaultReferenceIdentity": "[if(not(empty(parameters('userAssignedIdentityId'))), parameters('userAssignedIdentityId'), 'SystemAssigned')]"
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites/config",
+              "apiVersion": "2020-12-01",
+              "name": "[format('{0}/{1}', parameters('name'), 'appsettings')]",
+              "kind": "[parameters('kind')]",
+              "properties": "[union(parameters('appSettingsKeyValuePairs'), if(not(empty(parameters('storageAccountId'))), union(createObject('AzureWebJobsStorage', format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};', last(split(parameters('storageAccountId'), '/')), listKeys(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', split(parameters('storageAccountId'), '/')[2], split(parameters('storageAccountId'), '/')[4]), 'Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/'))), '2021-02-01').keys[0].value)), if(equals(parameters('setAzureWebJobsDashboard'), true()), createObject('AzureWebJobsDashboard', format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};', last(split(parameters('storageAccountId'), '/')), listKeys(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', split(parameters('storageAccountId'), '/')[2], split(parameters('storageAccountId'), '/')[4]), 'Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/'))), '2021-02-01').keys[0].value)), createObject())), createObject()), if(not(empty(parameters('appInsightId'))), createObject('APPINSIGHTS_INSTRUMENTATIONKEY', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', split(parameters('appInsightId'), '/')[2], split(parameters('appInsightId'), '/')[4]), 'Microsoft.Insights/components', last(split(parameters('appInsightId'), '/'))), '2020-02-02').InstrumentationKey, 'APPLICATIONINSIGHTS_CONNECTION_STRING', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', split(parameters('appInsightId'), '/')[2], split(parameters('appInsightId'), '/')[4]), 'Microsoft.Insights/components', last(split(parameters('appInsightId'), '/'))), '2020-02-02').ConnectionString), createObject()), parameters('authSettingV2Configuration'), if(and(equals(parameters('functionsWorkerRuntime'), 'dotnet'), equals(parameters('functionsWorkerRuntimeVersion'), '6')), createObject('FUNCTIONS_EXTENSION_VERSION', '~4', 'FUNCTIONS_WORKER_RUNTIME', 'dotnet', 'WEBSITE_CONTENTSHARE', toLower(parameters('name')), 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING', format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', last(split(parameters('storageAccountId'), '/')), listKeys(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', split(parameters('storageAccountId'), '/')[2], split(parameters('storageAccountId'), '/')[4]), 'Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/'))), '2021-02-01').keys[0].value)), createObject()), if(and(equals(parameters('functionsWorkerRuntime'), 'dotnet'), equals(parameters('functionsWorkerRuntimeVersion'), '3.1')), createObject('FUNCTIONS_EXTENSION_VERSION', '~3', 'FUNCTIONS_WORKER_RUNTIME', 'dotnet', 'WEBSITE_CONTENTSHARE', toLower(parameters('name')), 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING', format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', last(split(parameters('storageAccountId'), '/')), listKeys(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', split(parameters('storageAccountId'), '/')[2], split(parameters('storageAccountId'), '/')[4]), 'Microsoft.Storage/storageAccounts', last(split(parameters('storageAccountId'), '/'))), '2021-02-01').keys[0].value)), createObject()), variables('containerAppSettings'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+              ]
+            },
+            {
+              "condition": "[or(or(or(not(empty(parameters('diagnosticStorageAccountId'))), not(empty(parameters('diagnosticWorkspaceId')))), not(empty(parameters('diagnosticEventHubAuthorizationRuleId')))), not(empty(parameters('diagnosticEventHubName'))))]",
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.Web/sites/{0}', parameters('name'))]",
+              "name": "[parameters('diagnosticSettingsName')]",
+              "properties": {
+                "storageAccountId": "[if(not(empty(parameters('diagnosticStorageAccountId'))), parameters('diagnosticStorageAccountId'), null())]",
+                "workspaceId": "[if(not(empty(parameters('diagnosticWorkspaceId'))), parameters('diagnosticWorkspaceId'), null())]",
+                "eventHubAuthorizationRuleId": "[if(not(empty(parameters('diagnosticEventHubAuthorizationRuleId'))), parameters('diagnosticEventHubAuthorizationRuleId'), null())]",
+                "eventHubName": "[if(not(empty(parameters('diagnosticEventHubName'))), parameters('diagnosticEventHubName'), null())]",
+                "metrics": "[variables('diagnosticsMetrics')]",
+                "logs": "[variables('diagnosticsLogs')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the site."
+              },
+              "value": "[parameters('name')]"
+            },
+            "resourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the site."
+              },
+              "value": "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+            },
+            "resourceGroupName": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource group the site was deployed into."
+              },
+              "value": "[resourceGroup().name]"
+            },
+            "systemAssignedPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "The principal ID of the system assigned identity."
+              },
+              "value": "[if(and(parameters('systemAssignedIdentity'), contains(reference(resourceId('Microsoft.Web/sites', parameters('name')), '2021-03-01', 'full').identity, 'principalId')), reference(resourceId('Microsoft.Web/sites', parameters('name')), '2021-03-01', 'full').identity.principalId, '')]"
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location the resource was deployed into."
+              },
+              "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2021-03-01', 'full').location]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'asp-Host-deployment')]",
+        "[resourceId('Microsoft.Resources/deployments', 'logAnalyticsWS-deployment')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "appName": {
+      "type": "string",
+      "value": "[parameters('appName')]"
+    },
+    "vnetId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('vnetDeployment-{0}', variables('vnetName'))), '2022-09-01').outputs.vnetId.value]"
+    },
+    "subnets": {
+      "type": "array",
+      "copy": {
+        "count": "[length(variables('subnetsInfo'))]",
+        "input": {
+          "subnetIndex": "[copyIndex()]",
+          "subnetName": "[reference(resourceId('Microsoft.Resources/deployments', format('vnetDeployment-{0}', variables('vnetName'))), '2022-09-01').outputs.subnetsOutput.value[copyIndex()].name]",
+          "subnetId": "[reference(resourceId('Microsoft.Resources/deployments', format('vnetDeployment-{0}', variables('vnetName'))), '2022-09-01').outputs.subnetsOutput.value[copyIndex()].id]"
+        }
+      }
+    }
+  }
+}
